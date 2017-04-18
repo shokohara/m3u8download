@@ -40,6 +40,6 @@ object GooglePagination {
   def paginate(page: Int, max: Int, per: Int, width: Int): GooglePagination = {
     val p = pagination(page, max, per, width)
     val ps: List[Int] = p.tail.init.toList[Option[Int]].flatten
-    GooglePagination(p.head, ps, p.last, max)
+    GooglePagination(p.head, ps, p.last, maxPageNumber(max, per))
   }
 }
