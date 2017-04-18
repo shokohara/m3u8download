@@ -4,7 +4,7 @@ import shapeless.Poly1
 import shapeless.poly.identity
 import shapeless.syntax.std.tuple._
 
-case class GooglePagination(previous: Boolean, pages: List[Int], next: Boolean)
+case class GooglePagination(previous: Boolean, pages: List[Int], next: Boolean, maxPageNumber: Int)
 
 object GooglePagination {
 
@@ -40,6 +40,6 @@ object GooglePagination {
   def paginate(page: Int, max: Int, per: Int, width: Int): GooglePagination = {
     val p = pagination(page, max, per, width)
     val ps: List[Int] = p.tail.init.toList[Option[Int]].flatten
-    GooglePagination(p.head, ps, p.last)
+    GooglePagination(p.head, ps, p.last, max)
   }
 }
