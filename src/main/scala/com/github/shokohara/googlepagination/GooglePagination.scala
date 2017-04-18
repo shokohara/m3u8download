@@ -4,6 +4,8 @@ import shapeless.Poly1
 import shapeless.poly.identity
 import shapeless.syntax.std.tuple._
 
+case class GooglePagination(previous: Boolean, pages: List[Int], next: Boolean)
+
 object GooglePagination {
 
   object wrapIntInOption extends Poly1 {
@@ -34,5 +36,10 @@ object GooglePagination {
       implicit def caseInt = at[Int](n => if (start + n <= maxPage) Some(start + n) else None)
     }
     (1 < page) +: sequenceTuple(0).map(limit) :+ (page < maxPage)
+  }
+  def paginate(page: Int, max: Int, per: Int, width: Int): GooglePagination = {
+    val p = pagination(page, max, per, width)
+    val ps: List[Int] = p.tail.init.toList[Option[Int]].flatten
+    GooglePagination(p.head, ps, p.last)
   }
 }
