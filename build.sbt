@@ -13,3 +13,5 @@ libraryDependencies ++= Seq(
 sources in (Compile, doc) := Seq.empty
 
 publishArtifact in (Compile, packageDoc) := false
+
+enablePlugins(JavaAppPackaging)

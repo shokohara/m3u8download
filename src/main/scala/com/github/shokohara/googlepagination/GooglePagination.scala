@@ -1,45 +1,42 @@
 package com.github.shokohara.googlepagination
 
-import shapeless.Poly1
-import shapeless.poly.identity
-import shapeless.syntax.std.tuple._
+import java.io.File
 
-case class GooglePagination(previous: Boolean, pages: List[Int], next: Boolean, maxPageNumber: Int)
+import scala.io.Source
+import sys.process._
 
-object GooglePagination {
-
-  object wrapIntInOption extends Poly1 {
-    implicit def caseBool = at[Boolean](identity)
-    implicit def caseInt = at[Int](Some.apply)
+object Main {
+  def main(args: Array[String]): Unit = {
+    toCommand(toM3u8("http://aaaaa/detail/JFiM7T0Xmu")).foreach(_.!)
   }
 
-  type Pagination = (Boolean, Option[Int], Option[Int], Option[Int], Option[Int], Option[Int], Option[Int], Option[Int], Option[Int], Option[Int], Option[Int], Boolean)
-
-  def sequenceTuple(s: Int): (Int, Int, Int, Int, Int, Int, Int, Int, Int, Int) =
-    (s + 0, s + 1, s + 2, s + 3, s + 4, s + 5, s + 6, s + 7, s + 8, s + 9)
-  def toPagination(v: (Boolean, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Boolean)): Pagination =
-    v.map(wrapIntInOption)
-  def toPagination(v: (Boolean, (Int, Int, Int, Int, Int, Int, Int, Int, Int, Int), Boolean)): Pagination =
-    toPagination(v._1 +: v._2 :+ v._3)
-
-  def maxPageNumber(max: Long, per: Int) = scala.math.ceil(max.toDouble / per.toDouble).toInt
-  def firstPaginationNumber(page: Int, max: Long, per: Int, width: Int): Int = {
-    val maxPage = this.maxPageNumber(max, per)
-    if (page < 1 + width / 2) 1
-    else if (maxPage - width / 2 < page) maxPage - width + 1
-    else page - width / 2
+  def toM3u8(url: String): List[(String, String)] = {
+    val name = url.diff("http://aaaaa/detail/")
+    s"""http://.*/$name/master.m3u8""".r.findFirstIn(Source.fromURL(url).mkString).toList.distinct.map((s"$name.mp4", _))
   }
-  def pagination(page: Int, max: Long, per: Int, width: Int): Pagination = {
-    val maxPage = this.maxPageNumber(max, per)
-    val start = firstPaginationNumber(page, max, per, width)
-    object limit extends Poly1 {
-      implicit def caseInt = at[Int](n => if (start + n <= maxPage) Some(start + n) else None)
+  def toCommand(details: List[(String, String)]) = details.filterNot(new File("/Users/sho.kohara/m/").listFiles().map(_.getName).contains)
+    .map(v => s"ffmpeg -i ${v._2} -c copy -bsf:a aac_adtstoasc -vcodec copy -c copy ${v._1}")
+
+  def pages(url: String): List[String] = {
+    val urls =
+      """/category/[\w\-\.\/\?\,\#\:\u3000-\u30FE\u4E00-\u9FA0\uFF01-\uFFE3]*\?page=[0-9]*""".r.findAllIn(Source.fromURL(url).mkString).toList.distinct ++
+        """/search\?word=[\%\w]*\&page=[0-9]*""".r.findAllIn(Source.fromURL(url).mkString).toList.distinct
+    val pages = urls.flatMap("""page=[0-9]*""".r.findAllIn).distinct.map(_.diff("page=")).map(_.toInt)
+    urls.headOption.map(_.replaceFirst("=[0-9]*", "=")).toList.flatMap { base =>
+      (pages.min to pages.max).map(base + _)
     }
-    (1 < page) +: sequenceTuple(0).map(limit) :+ (page < maxPage)
   }
-  def paginate(page: Int, max: Long, per: Int, width: Int): GooglePagination = {
-    val p = pagination(page, max, per, width)
-    val ps: List[Int] = p.tail.init.toList[Option[Int]].flatten
-    GooglePagination(p.head, ps, p.last, maxPageNumber(max, per))
+
+  def words = {
+    """search\?[\w\%=]*""".r.findAllIn(Source.fromURL("http://aaaaa/taglist").mkString).toList.distinct.map(_.diff("search?")).map { word =>
+      // word=%E9%A8%8E%E4%B9%97%E4%BD%8D
+      word
+    }
+  }
+
+  def dynamicDetails(url: String): List[(String, String)] =
+    """/detail/\w+""".r.findAllIn(Source.fromURL(url).mkString).toList.distinct.map(_.diff("/detail/")).flatMap { name =>
+      println(name)
+      s"""http://.*/$name/master.m3u8""".r.findAllIn(Source.fromURL(s"http://aaaaa/detail/$name").mkString).toList.distinct.map((s"$name.mp4", _))
   }
 }
