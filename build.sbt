@@ -4,13 +4,13 @@ organization := "com.github.shokohara"
 
 version := "1.0.0"
 
+scalaOrganization := "org.scala-lang"
+
 scalaVersion := "2.12.2"
 
 val http4sVersion = "0.17.0-M3"
 
 libraryDependencies ++= Seq(
-  "com.chuusai" %% "shapeless" % "2.3.2",
-  "org.scalaz" %% "scalaz-core" % "7.2.14",
   "org.http4s" %% "http4s-dsl" % http4sVersion,
   "org.http4s" %% "http4s-blaze-client" % http4sVersion,
   "org.scalatest" %% "scalatest" % "3.0.1" % Test
